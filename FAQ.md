@@ -6,7 +6,7 @@ Use ChatGPT Plus or Pro with Apps / Developer Mode access.
 
 Current testing shows free and Go accounts do not expose the app flow needed for CodexPro.
 
-CodexPro does not unlock Developer Mode, unlock models, or bypass account limits. It connects to the ChatGPT app surface your account already has.
+CodexPro does not unlock Developer Mode, unlock models, bypass account limits, or provide account access. It connects to the ChatGPT app surface your account already has.
 
 ## What is the recommended install path?
 
@@ -65,15 +65,15 @@ CodexPro widgets are built for the CSP-enabled path. They do not need unrestrict
 
 No.
 
-CodexPro does not change ChatGPT, Codex, or OpenAI limits. It gives a ChatGPT account that already has Developer Mode app access a local repo bridge through MCP.
+CodexPro does not bypass, avoid, increase, pool, resell, or modify ChatGPT, Codex, OpenAI, or third-party model limits. Every request still runs through the user's own ChatGPT session and whatever limits that account has.
 
-The useful part is that Codex and ChatGPT are different product surfaces with separate usage policies. If Codex is constrained and your ChatGPT plan still has capacity, CodexPro lets you keep working from ChatGPT against the same local repo.
+The useful part is that Codex and ChatGPT are different product surfaces. If one workflow is unavailable and another product surface you already have access to is still available, CodexPro lets you work against the same local repo without changing either product's limits.
 
 ## Can CodexPro use GPT-5.5?
 
-Only if your ChatGPT account already exposes that model or a similar stronger model in the ChatGPT web product surface you are using.
+Only if your ChatGPT account already exposes that exact model, or a similar stronger model, in the ChatGPT web product surface you are using.
 
-CodexPro does not provide models. It gives the ChatGPT session local repo tools.
+CodexPro does not provide, proxy, resell, or unlock models. It gives the ChatGPT session local repo tools.
 
 ## What can ChatGPT see through CodexPro?
 

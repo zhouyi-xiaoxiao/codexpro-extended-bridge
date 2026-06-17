@@ -31,7 +31,9 @@
 
 CodexPro turns ChatGPT Developer Mode into a local coding agent for the folder on your machine. Install it globally, run setup in a repo, paste the copied Server URL into ChatGPT Create App, and ChatGPT can inspect files, edit code, run safe verification commands, and load the same explicit context you normally give Codex through `AGENTS.md`, `.ai-bridge`, git status, git diff, and source files.
 
-The practical hook: Codex and ChatGPT are different product surfaces with separate usage policies. When Codex is constrained, CodexPro lets you keep coding from ChatGPT if your ChatGPT plan still has available capacity.
+CodexPro is not a rate-limit bypass. It uses ChatGPT's official Developer Mode and MCP app path to connect your own ChatGPT session to your own local repo. ChatGPT and Codex remain separate product surfaces, each subject to its own plan limits, safety rules, and availability.
+
+If one workflow is unavailable and another product surface you already have access to is still available, CodexPro lets you keep working against the same local repo without modifying or evading either product's limits.
 
 ```bash
 npm install -g codexpro
@@ -69,7 +71,7 @@ Pro planning mode   Export a durable context bundle for sessions that cannot cal
 Stable URLs         Use an ngrok free dev domain or Cloudflare named tunnel so the ChatGPT app URL stays fixed.
 ```
 
-If your ChatGPT account exposes a stronger model in the web app, including any GPT-5.5-class model available to your account, CodexPro lets that model work against your local repo through MCP. CodexPro does not provide or unlock that model; it gives the ChatGPT session local coding tools and repo context.
+If your ChatGPT account exposes a stronger model in the web app, CodexPro lets that model work against your local repo through MCP. CodexPro does not provide, proxy, resell, or unlock models; it gives the ChatGPT session local coding tools and repo context.
 
 CodexPro is not an OS sandbox. It is a local developer bridge with safety defaults. Read [SECURITY.md](SECURITY.md) before exposing it through a tunnel.
 
@@ -89,7 +91,9 @@ Current testing shows free / Go ChatGPT accounts do not expose the app flow need
 
 CodexPro is a public open-source MCP bridge with conservative defaults: workspace-only writes, safe bash by default, blocked secret paths, token-protected public URLs, and compact visual cards for high-signal code changes.
 
-CodexPro does not bypass, increase, or modify ChatGPT, Codex, or OpenAI rate limits. It gives you another workflow surface: ChatGPT can do MCP-backed agentic coding in your local repo, while Codex remains available for terminal execution, review, or handoff workflows. Because the surfaces have separate usage policies, you can often keep moving in ChatGPT when a Codex workflow is blocked by its own limits. Model/tool availability and quota behavior are controlled by the product you connect it to.
+CodexPro does not bypass, avoid, increase, pool, resell, or modify ChatGPT, Codex, OpenAI, or third-party model limits. It does not provide models or account access. It only exposes local repo tools to the ChatGPT session the user already controls through official MCP and Developer Mode.
+
+ChatGPT can do MCP-backed agentic coding in your local repo, while Codex remains available for terminal execution, review, or handoff workflows. Model, tool, and quota behavior are controlled by the product and account you connect CodexPro to.
 
 ## Tools exposed to ChatGPT
 

@@ -12,6 +12,12 @@ Please report security issues privately before opening a public issue. If the re
 
 Do not include secrets, private repository contents, tunnel tokens, or `.env` values in reports.
 
+## Terms Boundary
+
+CodexPro is not designed to bypass, avoid, pool, resell, or modify ChatGPT, Codex, OpenAI, or third-party model limits. Do not market, deploy, or configure it that way.
+
+Each user should connect their own ChatGPT account, use only product surfaces available to that account, and follow the limits, safety rules, and terms for ChatGPT, Codex, OpenAI, and any third-party model provider they connect.
+
 ## Threat Model
 
 CodexPro can expose:

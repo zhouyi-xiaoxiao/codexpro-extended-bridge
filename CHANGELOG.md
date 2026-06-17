@@ -7,6 +7,7 @@
 - Added `--dry-run`, `--yes`, timeout handling, stdout/stderr capture, `agent-status.md`, `implementation-diff.patch`, and `execution-log.jsonl` output.
 - Kept `handoff_to_agent` planning-only; local execution is not exposed as a remote MCP tool.
 - Added smoke coverage for dry-run previews, custom command validation, execution status, diff collection, and structured execution logging.
+- Clarified that CodexPro is an official Developer Mode/MCP workflow, not a rate-limit bypass or model access provider.
 
 ## 0.27.2
 

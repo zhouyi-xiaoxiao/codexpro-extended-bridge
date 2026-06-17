@@ -18,6 +18,10 @@
 <p align="center">
   <a href="https://rebel0789.github.io/codexpro/">Website</a>
   ·
+  <a href="README_ZH.md">中文 README</a>
+  ·
+  <a href="https://rebel0789.github.io/codexpro/zh.html">中文网站</a>
+  ·
   <a href="https://github.com/rebel0789/codexpro">Star on GitHub</a>
   ·
   <a href="https://www.npmjs.com/package/codexpro">npm</a>

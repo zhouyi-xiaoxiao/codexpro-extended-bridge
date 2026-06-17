@@ -12,10 +12,12 @@
     <meta property="og:description" content="Let ChatGPT web see Codex-style repo context and act like a local coding agent." />
     <meta property="og:image" content="https://rebel0789.github.io/codexpro/og.svg" />
     <meta name="theme-color" content="#0b1220" />
+    <link rel="alternate" hreflang="zh-CN" href="https://rebel0789.github.io/codexpro/zh.html" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <a class="skip-link" href="#quickstart">Skip to setup</a>
     <header class="site-header">
       <a class="brand" href="#top" aria-label="CodexPro home">
         <span class="brand-mark">CP</span>
@@ -29,6 +31,7 @@
         <a href="#reference">Docs</a>
         <a href="#faq">FAQ</a>
         <a href="#stop">Stop</a>
+        <a href="./zh.html">中文</a>
         <a class="nav-star" href="https://github.com/rebel0789/codexpro"><img src="./star.svg" alt="" aria-hidden="true" />Star on GitHub</a>
       </nav>
     </header>
@@ -36,11 +39,17 @@
     <main id="top">
       <section class="hero">
         <div class="hero-copy">
+          <p class="launch-pill"><img src="./star.svg" alt="" aria-hidden="true" />Open-source MCP bridge for ChatGPT Plus / Pro</p>
           <p class="eyebrow">ChatGPT plus local repo tools</p>
-          <h1>Let ChatGPT code inside your repo.</h1>
+          <h1>Use ChatGPT as a local coding agent.</h1>
           <p class="hero-lede">
-            CodexPro uses ChatGPT Developer Mode and MCP to connect your own ChatGPT session to your own local repo. ChatGPT can see Codex-style workspace context, inspect files, edit code, and verify changes. It does not bypass limits or provide models.
+            CodexPro connects ChatGPT Developer Mode to the repo on your machine. One setup command gives ChatGPT file reads, code search, exact edits, git status, git diff, safe checks, and Codex-style context. It does not bypass limits or provide models.
           </p>
+          <div class="hero-proof" aria-label="Core capabilities">
+            <span>AGENTS.md context</span>
+            <span>.ai-bridge handoff</span>
+            <span>stable ngrok or Cloudflare URL</span>
+          </div>
           <div class="hero-actions">
             <a class="button primary" href="#quickstart">Start with setup</a>
             <a class="button secondary star-button" href="https://github.com/rebel0789/codexpro"><img src="./star.svg" alt="" aria-hidden="true" />Star on GitHub</a>
@@ -53,37 +62,45 @@ codexpro setup</code>
           </div>
         </div>
 
-        <div class="hero-visual" aria-label="CodexPro startup preview">
-          <div class="terminal-window">
-            <div class="terminal-bar">
-              <span></span>
-              <span></span>
-              <span></span>
-              <strong>codexpro start</strong>
+        <div class="hero-visual" aria-label="CodexPro workspace preview">
+          <div class="workspace-demo">
+            <div class="demo-toolbar">
+              <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+              <strong>ChatGPT + CodexPro</strong>
+              <small>connected</small>
             </div>
-            <div class="terminal-body">
-              <p><span class="ok">OK</span> Local MCP ready at <code>127.0.0.1:8787</code></p>
-              <p><span class="ok">OK</span> Tunnel ready with public HTTPS</p>
-              <p><span class="ok">OK</span> Server URL copied to clipboard</p>
-              <div class="terminal-card">
-                <span>Next step</span>
-                <strong>Paste once. Start coding from ChatGPT.</strong>
-                <small>Connection: Server URL. Authentication: None.</small>
+            <div class="demo-grid">
+              <div class="chat-pane">
+                <small>ChatGPT</small>
+                <p>“Open the current workspace, read the Codex context, fix the failing test, and show me the diff.”</p>
+                <div class="message-chip">Developer Mode app: CodexPro</div>
+              </div>
+              <div class="tool-pane">
+                <small>CodexPro tools</small>
+                <div class="tool-card-mini active">
+                  <span>codex_context</span>
+                  <strong>AGENTS.md + .ai-bridge + git state</strong>
+                </div>
+                <div class="tool-card-mini">
+                  <span>edit</span>
+                  <strong>exact replacement inside workspace</strong>
+                </div>
+                <div class="tool-card-mini">
+                  <span>bash</span>
+                  <strong>safe npm test / lint / build</strong>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="agent-panel">
-            <div class="panel-head">
-              <span class="status-dot"></span>
-              <strong>Normal coding</strong>
-              <small>write=workspace</small>
+            <div class="repo-pane">
+              <div class="repo-row"><span>README.md</span><strong>+ Chinese docs link</strong></div>
+              <div class="repo-row"><span>src/http.ts</span><strong>token auth checked</strong></div>
+              <div class="repo-row"><span>.ai-bridge/current-plan.md</span><strong>handoff ready</strong></div>
             </div>
-            <ul>
-              <li>Read Codex-style context</li>
-              <li>Edit source files</li>
-              <li>Run safe verification</li>
-              <li>Review git status</li>
-            </ul>
+          </div>
+          <div class="floating-note">
+            <span>Daily command</span>
+            <strong>codexpro start</strong>
+            <small>Use ngrok or Cloudflare named tunnel for one stable ChatGPT URL.</small>
           </div>
         </div>
       </section>
@@ -541,6 +558,7 @@ codexpro settings delete --yes</code></pre>
       <span>CodexPro</span>
       <a class="star-link" href="https://github.com/rebel0789/codexpro"><img src="./star.svg" alt="" aria-hidden="true" />Star on GitHub</a>
       <a href="https://www.npmjs.com/package/codexpro">npm</a>
+      <a href="./zh.html">中文</a>
       <a href="https://github.com/rebel0789/codexpro/blob/main/SECURITY.md">Security</a>
     </footer>
 

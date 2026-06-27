@@ -79,6 +79,31 @@ This fork does not automatically read all ChatGPT web conversations. That is int
 
 This still helps a lot: future ChatGPT Pro, Codex, and Claude Code runs can read durable project decisions without relying on one hidden web transcript.
 
+### Scroll-Capture A Visible ChatGPT Session
+
+When the target conversation is open in Chrome, Codex or Claude Code can run a local capture command that scrolls the page upward to trigger older-message loading, then scans downward to collect messages in order:
+
+```bash
+codexpro capture-chatgpt-session --root /path/to/repo --find-chatgpt
+```
+
+This writes a project-local saved session that `read_saved_chat_session` can read later. The default backend uses Chrome AppleScript automation and may require enabling:
+
+```text
+Chrome -> View -> Developer -> Allow JavaScript from Apple Events
+```
+
+For a dedicated automation Chrome launched with DevTools enabled, use:
+
+```bash
+codexpro capture-chatgpt-session \
+  --root /path/to/repo \
+  --cdp-url http://127.0.0.1:9222 \
+  --cdp-url-contains chatgpt.com/c/
+```
+
+The scroll capture is best-effort because ChatGPT's web DOM and lazy-loading behavior can change. It is still explicit, local, and auditable: no hidden account-history API is used, and transcript data is written only into the workspace.
+
 ## Files Created in `.ai-bridge`
 
 ```text

@@ -26,6 +26,7 @@ Usage:
   codexpro execute-handoff --agent opencode --model provider/model
   codexpro watch-handoff --agent opencode --model provider/model
   codexpro loop-handoff --agent opencode --model provider/model --review-command "node ./reviewer.js --status {{status_file}} --diff {{diff_file}} --plan-file {{plan_file}}"
+  codexpro capture-chatgpt-session --root /path/to/repo --find-chatgpt
   codexpro --root /path/to/repo
   codexpro ngrok --hostname your-domain.ngrok-free.dev
   codexpro stable --hostname codexpro.example.com --tunnel-name codexpro
@@ -183,6 +184,9 @@ Watch for new handoff plans and execute them locally:
 
 Run a bounded local execute/review loop:
   codexpro loop-handoff --agent opencode --model provider/model --review-command "node ./reviewer.js --status {{status_file}} --diff {{diff_file}} --plan-file {{plan_file}}" --max-iters 3 --yes
+
+Capture the current ChatGPT web session from Chrome into .ai-bridge:
+  codexpro capture-chatgpt-session --root /path/to/repo --find-chatgpt
 
 Stable URL mode after one-time Cloudflare tunnel setup:
   codexpro stable --root /path/to/repo --hostname codexpro.example.com --tunnel-name codexpro
@@ -3245,6 +3249,9 @@ async function main() {
   }
   if (subcommand === 'pro-apply' || subcommand === 'apply') {
     runHelperScript('pro-apply.mjs', argv.slice(1));
+  }
+  if (subcommand === 'capture-chatgpt-session' || subcommand === 'capture-chatgpt') {
+    runHelperScript('chatgpt-scroll-capture.mjs', argv.slice(1));
   }
   if (subcommand === 'install-cloudflared') {
     const installArgs = parseArgs(argv.slice(1));

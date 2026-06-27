@@ -226,6 +226,7 @@ Local-only companion command:
 - `codexpro watch-handoff` — watch `.ai-bridge/current-plan.md` locally and run a new plan through a configured agent when its content hash changes. This is also CLI-only and is not exposed as a remote MCP tool.
 - `codexpro loop-handoff` — run a bounded local execute/review loop where a user-provided reviewer command can pass or rewrite `.ai-bridge/current-plan.md` for another local executor iteration.
 - `codexpro-claude-handoff` — helper used by `--agent claude-code` to invoke the local Claude Code CLI with a handoff prompt.
+- `codexpro capture-chatgpt-session` — optional local Chrome scroll-capture helper for the currently open ChatGPT conversation. It writes explicit saved-session JSONL under `.ai-bridge/chat-sessions/` for later `read_saved_chat_session` use.
 
 The watcher is the safer way to automate handoff execution from ChatGPT Web. ChatGPT writes the plan through `handoff_to_agent`; the user-started local watcher notices the new plan and runs Pi, OpenCode, Codex, or a restricted custom command from the terminal:
 

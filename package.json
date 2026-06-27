@@ -52,6 +52,7 @@
   "bin": {
     "codexpro": "scripts/codexpro.mjs",
     "codexpro-claude-handoff": "scripts/claude-handoff.mjs",
+    "codexpro-capture-chatgpt": "scripts/chatgpt-scroll-capture.mjs",
     "codexpro-mcp": "dist/stdio.js",
     "codexpro-mcp-http": "dist/http.js"
   },
@@ -80,6 +81,7 @@
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "minimatch": "^10.0.1",
+    "ws": "^8.21.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {

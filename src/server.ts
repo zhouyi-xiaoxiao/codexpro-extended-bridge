@@ -3076,16 +3076,20 @@ After the watcher starts and runs the plan, call handoff_poll with plan_hash="${
           finalState = "plan_hash_mismatch";
           break;
         }
-        if (state.state === "running") {
+        const stateValue = typeof state.state === "string" ? state.state : typeof state.status === "string" ? state.status : "";
+        const eventValue = typeof state.event === "string" ? state.event : "";
+        const exitCodeValue = state.exit_code ?? state.exitCode;
+        const succeeded = exitCodeValue === 0 || exitCodeValue === "0";
+        if (stateValue === "running") {
           finalState = "running";
-        } else if (
-          state.state === "completed" ||
-          state.state === "failed" ||
-          state.event === "watch_handoff_finished" ||
-          state.lastPlanHash === currentHash ||
-          state.plan_hash === currentHash
-        ) {
+        } else if (stateValue === "failed" || state.status === "failed" || state.lastFailedHash === currentHash) {
+          finalState = "failed";
+          break;
+        } else if (stateValue === "completed" || (eventValue === "watch_handoff_finished" && succeeded)) {
           finalState = "completed";
+          break;
+        } else if (state.lastPlanHash === currentHash || state.plan_hash === currentHash) {
+          finalState = succeeded ? "completed" : "failed";
           break;
         } else {
           finalState = "waiting_for_executor";
@@ -3135,6 +3139,8 @@ After the watcher starts and runs the plan, call handoff_poll with plan_hash="${
         diff_path: diffPath,
         log_path: logPath,
         exit_code: state.exit_code ?? state.exitCode ?? null,
+        timed_out: state.timed_out ?? state.timedOut ?? null,
+        retry_hint: finalState === "failed" ? "Fix the executor failure or update current-plan.md, then rerun execute-handoff/watch-handoff." : null,
         additions: diffStatsValue.additions,
         deletions: diffStatsValue.deletions,
         diff_changed: diffStatsValue.changed,

@@ -387,11 +387,14 @@ function optionalWriteOption(args, profile, mode) {
 }
 
 function commandExists(command) {
-  const result = spawnSync(process.platform === 'win32' ? 'where' : 'command', process.platform === 'win32' ? [command] : ['-v', command], {
-    shell: process.platform !== 'win32',
-    stdio: 'ignore'
-  });
-  return result.status === 0;
+  if (!command || isPathLike(command)) return false;
+  const dirs = String(process.env.PATH || '').split(path.delimiter).filter(Boolean);
+  const exts = process.platform === 'win32'
+    ? String(process.env.PATHEXT || '.EXE;.CMD;.BAT;.COM')
+      .split(';')
+      .filter(Boolean)
+    : [''];
+  return dirs.some((dir) => exts.some((ext) => executableFileExists(path.join(dir, command + ext))));
 }
 
 function isPathLike(command) {
@@ -405,7 +408,9 @@ function resolveExecutablePath(command) {
 
 function executableFileExists(filePath) {
   try {
-    return fs.statSync(filePath).isFile();
+    if (!fs.statSync(filePath).isFile()) return false;
+    if (process.platform !== 'win32') fs.accessSync(filePath, fs.constants.X_OK);
+    return true;
   } catch {
     return false;
   }
@@ -1497,6 +1502,40 @@ function writeHandoffRunState(root, contextDir, state) {
   return statePath;
 }
 
+function claimWatchPlan(root, contextDir, hash, request) {
+  const lockDir = resolveWorkspaceFile(root, path.posix.join(contextDir, 'locks'));
+  fs.mkdirSync(lockDir, { recursive: true, mode: 0o700 });
+  const lockPath = path.join(lockDir, `${hash}.lock`);
+  const body = `${JSON.stringify({
+    pid: process.pid,
+    started_at: new Date().toISOString(),
+    plan_hash: hash,
+    agent: request.commandInfo.agent,
+    model: request.commandInfo.model || undefined,
+    command: executorCommandPreview(request.commandInfo)
+  }, null, 2)}\n`;
+  let handle;
+  try {
+    handle = fs.openSync(lockPath, 'wx', 0o600);
+    fs.writeFileSync(handle, body);
+    return { claimed: true, lockPath };
+  } catch (error) {
+    if (error?.code !== 'EEXIST') throw error;
+    return { claimed: false, lockPath };
+  } finally {
+    if (handle !== undefined) fs.closeSync(handle);
+  }
+}
+
+function releaseWatchPlan(lockPath) {
+  if (!lockPath) return;
+  try {
+    fs.rmSync(lockPath, { force: true });
+  } catch {
+    // The lock is best-effort cleanup; a later watcher can report and skip if it still exists.
+  }
+}
+
 function appendBridgeLog(root, contextDir, event) {
   const bridgeDir = resolveWorkspaceFile(root, contextDir);
   fs.mkdirSync(bridgeDir, { recursive: true, mode: 0o700 });
@@ -1618,40 +1657,55 @@ async function runWatchHandoff(argv) {
       continue;
     }
 
-    appendBridgeLog(root, contextDir, {
-      event: 'watch_handoff_started',
-      plan_hash: currentHash,
-      agent: request.commandInfo.agent,
-      model: request.commandInfo.model || undefined,
-      plan_path: path.posix.join(contextDir, 'current-plan.md')
-    });
+    const claim = claimWatchPlan(root, contextDir, currentHash, request);
+    if (!claim.claimed) {
+      statusLine(args.once ? 'ok' : 'wait', `Handoff plan already claimed: ${currentHash.slice(0, 12)}`);
+      if (args.once) return;
+      await sleep(pollIntervalMs);
+      continue;
+    }
 
-    const execution = await executeHandoffRequest(request, { ...args, yes: true }, { skipConfirmation: true });
-    const exitCode = execution.result?.exitCode ?? null;
-    const succeeded = exitCode === 0 && !execution.result?.timedOut && !execution.result?.spawnError;
-    state = {
-      lastPlanHash: succeeded ? currentHash : successfulWatchPlanHash(state),
-      lastAttemptedHash: currentHash,
-      lastSucceededHash: succeeded ? currentHash : successfulWatchPlanHash(state),
-      lastFailedHash: succeeded ? '' : currentHash,
-      lastRanAt: new Date().toISOString(),
-      agent: request.commandInfo.agent,
-      model: request.commandInfo.model || undefined,
-      exitCode,
-      timedOut: Boolean(execution.result?.timedOut),
-      status: succeeded ? 'completed' : 'failed',
-      planPath: path.posix.join(contextDir, 'current-plan.md')
-    };
-    writeWatchState(statePath, state);
-    appendBridgeLog(root, contextDir, {
-      event: 'watch_handoff_finished',
-      plan_hash: currentHash,
-      agent: request.commandInfo.agent,
-      model: request.commandInfo.model || undefined,
-      exit_code: exitCode,
-      status_path: path.posix.join(contextDir, 'agent-status.md'),
-      diff_path: path.posix.join(contextDir, 'implementation-diff.patch')
-    });
+    let exitCode = null;
+    let execution;
+    try {
+      appendBridgeLog(root, contextDir, {
+        event: 'watch_handoff_started',
+        plan_hash: currentHash,
+        agent: request.commandInfo.agent,
+        model: request.commandInfo.model || undefined,
+        plan_path: path.posix.join(contextDir, 'current-plan.md'),
+        lock_path: path.posix.join(contextDir, 'locks', `${currentHash}.lock`)
+      });
+
+      execution = await executeHandoffRequest(request, { ...args, yes: true }, { skipConfirmation: true });
+      exitCode = execution.result?.exitCode ?? null;
+      const succeeded = exitCode === 0 && !execution.result?.timedOut && !execution.result?.spawnError;
+      state = {
+        lastPlanHash: succeeded ? currentHash : successfulWatchPlanHash(state),
+        lastAttemptedHash: currentHash,
+        lastSucceededHash: succeeded ? currentHash : successfulWatchPlanHash(state),
+        lastFailedHash: succeeded ? '' : currentHash,
+        lastRanAt: new Date().toISOString(),
+        agent: request.commandInfo.agent,
+        model: request.commandInfo.model || undefined,
+        exitCode,
+        timedOut: Boolean(execution.result?.timedOut),
+        status: succeeded ? 'completed' : 'failed',
+        planPath: path.posix.join(contextDir, 'current-plan.md')
+      };
+      writeWatchState(statePath, state);
+      appendBridgeLog(root, contextDir, {
+        event: 'watch_handoff_finished',
+        plan_hash: currentHash,
+        agent: request.commandInfo.agent,
+        model: request.commandInfo.model || undefined,
+        exit_code: exitCode,
+        status_path: path.posix.join(contextDir, 'agent-status.md'),
+        diff_path: path.posix.join(contextDir, 'implementation-diff.patch')
+      });
+    } finally {
+      releaseWatchPlan(claim.lockPath);
+    }
 
     if (args.once) {
       if (exitCode && exitCode !== 0) process.exitCode = exitCode;

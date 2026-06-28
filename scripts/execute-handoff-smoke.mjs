@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -21,6 +22,10 @@ function requireSuccess(result, label) {
 
 function quoteArg(value) {
   return `"${String(value).replaceAll('"', '\\"')}"`;
+}
+
+function planHash(planText) {
+  return createHash('sha256').update(planText).digest('hex');
 }
 
 const root = await fs.mkdtemp(path.join(os.tmpdir(), 'codexpro-execute-handoff-'));
@@ -156,7 +161,18 @@ if ((watchApp.match(/watch implemented/g) ?? []).length !== 1) {
   throw new Error(`watch duplicate plan was executed again\n${watchApp}`);
 }
 
-await fs.writeFile(path.join(watchRoot, '.ai-bridge', 'current-plan.md'), '# Watch plan 2\n\nAppend second watch marker.\n', 'utf8');
+const lockedPlan = '# Watch plan 2\n\nAppend second watch marker.\n';
+await fs.writeFile(path.join(watchRoot, '.ai-bridge', 'current-plan.md'), lockedPlan, 'utf8');
+const lockDir = path.join(watchRoot, '.ai-bridge', 'locks');
+const lockedPlanHash = planHash(lockedPlan);
+await fs.mkdir(lockDir, { recursive: true });
+await fs.writeFile(path.join(lockDir, `${lockedPlanHash}.lock`), JSON.stringify({ pid: 12345, plan_hash: lockedPlanHash }), { flag: 'wx' });
+requireSuccess(run(watchCommand), 'watch-handoff locked skip');
+watchApp = await fs.readFile(path.join(watchRoot, 'app.txt'), 'utf8');
+if ((watchApp.match(/watch implemented/g) ?? []).length !== 1 || watchApp.includes('# Watch plan 2')) {
+  throw new Error(`watch executed an already claimed plan\n${watchApp}`);
+}
+await fs.rm(path.join(lockDir, `${lockedPlanHash}.lock`), { force: true });
 requireSuccess(run(watchCommand), 'watch-handoff changed plan');
 watchApp = await fs.readFile(path.join(watchRoot, 'app.txt'), 'utf8');
 if ((watchApp.match(/watch implemented/g) ?? []).length !== 2 || !watchApp.includes('# Watch plan 2')) {

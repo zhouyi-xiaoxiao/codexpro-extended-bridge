@@ -570,6 +570,30 @@ const handoffPoll = await client.request('tools/call', {
 if (handoffPoll.structuredContent.state !== 'waiting_for_executor' || handoffPoll.structuredContent.plan_hash !== claudeHandoff.structuredContent.plan_hash) {
   throw new Error(`handoff_poll did not expose waiting state for current Claude plan: ${JSON.stringify(handoffPoll.structuredContent)}`);
 }
+await fs.writeFile(path.join(tmp, '.ai-bridge', 'handoff-run-state.json'), JSON.stringify({
+  state: 'failed',
+  plan_hash: claudeHandoff.structuredContent.plan_hash,
+  agent: 'claude-code',
+  exit_code: 7,
+  timed_out: false
+}, null, 2), 'utf8');
+const failedHandoffPoll = await client.request('tools/call', {
+  name: 'handoff_poll',
+  arguments: {
+    workspace_id: ws,
+    plan_hash: claudeHandoff.structuredContent.plan_hash,
+    max_wait_seconds: 0,
+    include_diff: false,
+    include_log_excerpt: false
+  }
+});
+if (
+  failedHandoffPoll.structuredContent.state !== 'failed' ||
+  failedHandoffPoll.structuredContent.exit_code !== 7 ||
+  !failedHandoffPoll.structuredContent.retry_hint
+) {
+  throw new Error(`handoff_poll did not preserve failed state: ${JSON.stringify(failedHandoffPoll.structuredContent)}`);
+}
 for (const bridgeFile of ['agent-status.md', 'implementation-diff.patch', 'execution-log.jsonl']) {
   await fs.stat(path.join(tmp, '.ai-bridge', bridgeFile));
 }

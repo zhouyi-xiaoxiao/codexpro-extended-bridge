@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -64,6 +64,71 @@ function buildPrompt(planPath, planText) {
   ].join('\n');
 }
 
+function hasProxyEnv(env) {
+  return Boolean(
+    env.HTTPS_PROXY ||
+      env.https_proxy ||
+      env.HTTP_PROXY ||
+      env.http_proxy ||
+      env.ALL_PROXY ||
+      env.all_proxy
+  );
+}
+
+function parseScutilProxy(text) {
+  const config = {};
+  for (const line of text.split(/\r?\n/)) {
+    const match = line.match(/^\s*([A-Za-z0-9]+)\s*:\s*(.+?)\s*$/);
+    if (match) config[match[1]] = match[2];
+  }
+  return config;
+}
+
+function proxyHost(host) {
+  return host.includes(':') && !host.startsWith('[') ? `[${host}]` : host;
+}
+
+function macSystemProxyEnv() {
+  if (process.platform !== 'darwin') return { env: {}, summary: null };
+  let output = '';
+  try {
+    output = execFileSync('/usr/sbin/scutil', ['--proxy'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: 2000
+    });
+  } catch {
+    return { env: {}, summary: null };
+  }
+
+  const config = parseScutilProxy(output);
+  const env = {};
+  const summaries = [];
+  if (config.HTTPSEnable === '1' && config.HTTPSProxy && config.HTTPSPort) {
+    env.HTTPS_PROXY = `http://${proxyHost(config.HTTPSProxy)}:${config.HTTPSPort}`;
+    summaries.push(`HTTPS ${config.HTTPSProxy}:${config.HTTPSPort}`);
+  }
+  if (config.HTTPEnable === '1' && config.HTTPProxy && config.HTTPPort) {
+    env.HTTP_PROXY = `http://${proxyHost(config.HTTPProxy)}:${config.HTTPPort}`;
+    summaries.push(`HTTP ${config.HTTPProxy}:${config.HTTPPort}`);
+  } else if (env.HTTPS_PROXY) {
+    env.HTTP_PROXY = env.HTTPS_PROXY;
+  }
+  if (config.SOCKSEnable === '1' && config.SOCKSProxy && config.SOCKSPort) {
+    env.ALL_PROXY = `socks5h://${proxyHost(config.SOCKSProxy)}:${config.SOCKSPort}`;
+    summaries.push(`SOCKS ${config.SOCKSProxy}:${config.SOCKSPort}`);
+  }
+  return { env, summary: summaries.join(', ') || null };
+}
+
+function claudeChildEnv(baseEnv) {
+  const env = { ...baseEnv };
+  if (hasProxyEnv(env)) return { env, proxySummary: null };
+  const systemProxy = macSystemProxyEnv();
+  Object.assign(env, systemProxy.env);
+  return { env, proxySummary: systemProxy.summary };
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help || args.h) {
@@ -77,12 +142,16 @@ async function main() {
     ? process.env.CLAUDE_HANDOFF_ARGS.split(/\s+/).filter(Boolean)
     : [];
   const childArgs = ['-p', prompt, ...extraArgs];
+  const { env: childEnv, proxySummary } = claudeChildEnv(process.env);
 
   console.error(`[codexpro-claude-handoff] running ${claudeBin} -p <handoff prompt>`);
+  if (proxySummary) {
+    console.error(`[codexpro-claude-handoff] using macOS system proxy for Claude Code: ${proxySummary}`);
+  }
   const child = spawn(claudeBin, childArgs, {
     cwd: process.cwd(),
     stdio: ['ignore', 'pipe', 'pipe'],
-    env: process.env
+    env: childEnv
   });
 
   child.stdout.pipe(process.stdout);

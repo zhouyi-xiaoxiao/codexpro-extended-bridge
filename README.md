@@ -228,6 +228,8 @@ Local-only companion command:
 - `codexpro-claude-handoff` — helper used by `--agent claude-code` to invoke the local Claude Code CLI with a handoff prompt.
 - `codexpro capture-chatgpt-session` — optional local Chrome scroll-capture helper for the currently open ChatGPT conversation. It writes explicit saved-session JSONL under `.ai-bridge/chat-sessions/` for later `read_saved_chat_session` use, preserves duplicate identical turns, has a default transcript size and secret guard, and supports `--dry-run` plus `--allow-sensitive` when intentionally storing a full private transcript.
 
+On macOS, `codexpro-claude-handoff` automatically passes the current system proxy from `scutil --proxy` to the child `claude` process when `HTTP_PROXY`, `HTTPS_PROXY`, and `ALL_PROXY` are not already set. This helps when Claude Web works in Chrome through a local proxy, but direct terminal Claude Code calls receive `403 Request not allowed`.
+
 The watcher is the safer way to automate handoff execution from ChatGPT Web. ChatGPT writes the plan through `handoff_to_agent`; the user-started local watcher notices the new plan and runs Pi, OpenCode, Codex, or a restricted custom command from the terminal:
 
 ```bash

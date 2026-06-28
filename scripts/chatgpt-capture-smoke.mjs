@@ -40,6 +40,22 @@ function runCapture(args) {
   return result;
 }
 
+function runCaptureExpectFailure(args, expectedText) {
+  const result = spawnSync(process.execPath, ['scripts/chatgpt-scroll-capture.mjs', ...args], {
+    cwd: path.resolve('.'),
+    encoding: 'utf8',
+    timeout: 10000
+  });
+  if (result.status === 0) {
+    throw new Error(`capture unexpectedly succeeded\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
+  }
+  const combined = `${result.stdout}\n${result.stderr}`;
+  if (expectedText && !combined.includes(expectedText)) {
+    throw new Error(`capture failure did not include ${expectedText}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
+  }
+  return result;
+}
+
 if (process.platform !== 'darwin') {
   console.log('chatgpt capture smoke skipped: macOS Chrome automation only');
   process.exit(0);
@@ -57,6 +73,7 @@ const root = path.join(tmp, 'workspace');
 await fs.mkdir(root, { recursive: true });
 await fs.mkdir(profile, { recursive: true });
 const fixturePath = path.join(tmp, 'fixture.html');
+const emptyFixturePath = path.join(tmp, 'empty-fixture.html');
 const fixtureHtml = `<!doctype html>
 <html>
 <head>
@@ -81,6 +98,7 @@ const fixtureHtml = `<!doctype html>
 </body>
 </html>`;
 await fs.writeFile(fixturePath, fixtureHtml, 'utf8');
+await fs.writeFile(emptyFixturePath, '<!doctype html><title>Empty Capture Fixture</title><main></main>', 'utf8');
 
 const chromeProcess = spawn(chrome, [
   `--user-data-dir=${profile}`,
@@ -88,19 +106,30 @@ const chromeProcess = spawn(chrome, [
   '--no-first-run',
   '--no-default-browser-check',
   '--disable-background-networking',
-  `file://${fixturePath}`
+  `file://${fixturePath}`,
+  `file://${emptyFixturePath}`
 ], {
   stdio: 'ignore'
 });
 
 try {
   const port = await waitForDevToolsPort(profile);
+  runCaptureExpectFailure([
+    '--root',
+    root,
+    '--allow-non-chatgpt',
+    '--cdp-url',
+    'http://127.0.0.1:1',
+    '--dry-run'
+  ], 'fetch');
   runCapture([
     '--root',
     root,
     '--allow-non-chatgpt',
     '--cdp-url',
     `http://127.0.0.1:${port}`,
+    '--cdp-url-contains',
+    '/fixture.html',
     '--session-id',
     'fixture-scroll-session',
     '--title',
@@ -111,6 +140,7 @@ try {
     '50'
   ]);
   const saved = await fs.readFile(path.join(root, '.ai-bridge', 'chat-sessions', 'chatgpt-web-scroll-fixture-scroll-session.jsonl'), 'utf8');
+  if (!saved.includes('"method":"chrome-cdp-scroll"')) throw new Error(`saved transcript missing CDP capture method\n${saved}`);
   for (const expected of [
     'Top user message for scroll capture.',
     'Middle assistant message for scroll capture.',
@@ -120,6 +150,24 @@ try {
   }
   const index = await fs.readFile(path.join(root, '.ai-bridge', 'chat-session-index.jsonl'), 'utf8');
   if (!index.includes('fixture-scroll-session')) throw new Error(`index missing fixture session\n${index}`);
+  const emptyDryRun = runCapture([
+    '--root',
+    root,
+    '--allow-non-chatgpt',
+    '--cdp-url',
+    `http://127.0.0.1:${port}`,
+    '--cdp-url-contains',
+    'empty-fixture.html',
+    '--dry-run',
+    '--max-scrolls',
+    '2',
+    '--settle-ms',
+    '50'
+  ]);
+  const emptySummary = JSON.parse(emptyDryRun.stdout);
+  if (emptySummary.message_count !== 0) {
+    throw new Error(`empty fixture should capture zero messages\n${emptyDryRun.stdout}`);
+  }
   console.log('✓ chatgpt capture smoke test passed');
 } finally {
   chromeProcess.kill('SIGTERM');

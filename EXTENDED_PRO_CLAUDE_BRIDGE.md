@@ -45,6 +45,8 @@ CLAUDE_HANDOFF_ARGS="--model claude-sonnet-4-5"
 CLAUDE_HANDOFF_BIN="/path/to/claude"
 ```
 
+`CLAUDE_BIN` is also accepted for compatibility with older local setups.
+
 ## ChatGPT Pro Workflow
 
 After connecting CodexPro in ChatGPT Developer Mode:
@@ -102,7 +104,7 @@ codexpro capture-chatgpt-session \
   --cdp-url-contains chatgpt.com/c/
 ```
 
-The scroll capture is best-effort because ChatGPT's web DOM and lazy-loading behavior can change. It is still explicit, local, and auditable: no hidden account-history API is used, and transcript data is written only into the workspace.
+The scroll capture is best-effort because ChatGPT's web DOM and lazy-loading behavior can change. It is still explicit, local, and auditable: no hidden account-history API is used, transcript data is written only into the workspace, and `--max-session-bytes` bounds accidental oversized writes.
 
 ## Files Created in `.ai-bridge`
 
@@ -127,6 +129,8 @@ The implementation is covered by:
 
 ```bash
 npm run build
-node scripts/smoke.mjs
-node scripts/execute-handoff-smoke.mjs
+npm run smoke
+npm run smoke:chatgpt-capture
 ```
+
+For a full capability matrix and data-flow notes, see `TECHNICAL_ARCHITECTURE.md`.

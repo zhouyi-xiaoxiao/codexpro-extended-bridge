@@ -1445,7 +1445,7 @@ export function createCodexProServer(config: CodexProConfig): McpServer {
       const renumbered = messages.map((message, offset) => ({ ...message, index: startIndex + offset }));
       const header = chatSessionHeader({ provider, sessionId, title, sourceUrl, tags, messageCount: startIndex + renumbered.length });
       const bodyRows = [
-        ...(existing ? [] : [header]),
+        header,
         ...renumbered
       ].map((row) => JSON.stringify(row)).join("\n") + "\n";
       const nextSize = Buffer.byteLength(existing, "utf8") + Buffer.byteLength(bodyRows, "utf8");

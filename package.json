@@ -6,12 +6,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rebel0789/codexpro.git"
+    "url": "git+https://github.com/zhouyi-xiaoxiao/codexpro-extended-bridge.git"
   },
   "bugs": {
-    "url": "https://github.com/rebel0789/codexpro/issues"
+    "url": "https://github.com/zhouyi-xiaoxiao/codexpro-extended-bridge/issues"
   },
-  "homepage": "https://rebel0789.github.io/codexpro/",
+  "homepage": "https://github.com/zhouyi-xiaoxiao/codexpro-extended-bridge#readme",
   "keywords": [
     "mcp",
     "chatgpt",
@@ -43,6 +43,7 @@
     "CODEX_PROMPT.md",
     "EXTENDED_PRO_CLAUDE_BRIDGE.md",
     "CHATGPT_PRO_REVIEW_PACKET.md",
+    "TECHNICAL_ARCHITECTURE.md",
     "AGENTS.example.md",
     "config.example.env"
   ],
@@ -65,6 +66,7 @@
     "dev:stdio": "tsx src/stdio.ts",
     "dev:http": "tsx src/http.ts",
     "smoke": "node scripts/smoke.mjs && node scripts/http-smoke.mjs && node scripts/pro-smoke.mjs && node scripts/doctor-smoke.mjs && node scripts/settings-smoke.mjs && node scripts/execute-handoff-smoke.mjs",
+    "smoke:chatgpt-capture": "node scripts/chatgpt-capture-smoke.mjs",
     "doctor": "node scripts/codexpro.mjs doctor",
     "connect": "node scripts/codexpro.mjs",
     "connect:setup": "node scripts/codexpro.mjs setup",

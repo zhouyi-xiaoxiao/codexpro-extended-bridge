@@ -64,7 +64,7 @@ async function main() {
     return;
   }
   const plan = readPlan(args.planFile);
-  const claudeBin = String(args.claudeBin || process.env.CLAUDE_BIN || 'claude');
+  const claudeBin = String(args.claudeBin || process.env.CLAUDE_HANDOFF_BIN || process.env.CLAUDE_BIN || 'claude');
   const prompt = buildPrompt(plan.path, plan.text);
   const extraArgs = process.env.CLAUDE_HANDOFF_ARGS
     ? process.env.CLAUDE_HANDOFF_ARGS.split(/\s+/).filter(Boolean)

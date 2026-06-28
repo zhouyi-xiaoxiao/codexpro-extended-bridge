@@ -27,6 +27,7 @@ Options:
   --max-scrolls <n>         Max upward and downward scroll steps. Default: 80.
   --settle-ms <ms>          Wait after each scroll for lazy loading. Default: 900.
   --stable-rounds <n>       Stop upward scan after this many stable top rounds. Default: 3.
+  --max-session-bytes <n>   Refuse to write JSONL transcripts larger than this. Default: 25000000.
   --enable-apple-events     Try to click Chrome's "Allow JavaScript from Apple Events" menu item first.
   --dry-run                 Capture and report counts without writing files.
   --help                    Show this message.
@@ -453,10 +454,11 @@ async function captureConversation(options, executeJs = executeChromeJs) {
   return { meta, messages, stats };
 }
 
-async function writeSession(root, contextDir, session) {
+async function writeSession(root, contextDir, session, options = {}) {
+  const maxSessionBytes = numberOption(options.maxSessionBytes, 25_000_000, 100_000, 250_000_000);
   const bridgeDir = resolveInside(root, contextDir);
   const sessionsDir = resolveInside(root, path.join(contextDir, 'chat-sessions'));
-  await fsp.mkdir(sessionsDir, { recursive: true });
+  await fsp.mkdir(sessionsDir, { recursive: true, mode: 0o700 });
   const relPath = path.join(contextDir, 'chat-sessions', `${session.provider}-${session.sessionId}.jsonl`).replace(/\\/g, '/');
   const absPath = resolveInside(root, relPath);
   const rows = [
@@ -474,10 +476,17 @@ async function writeSession(root, contextDir, session) {
     ...session.messages
   ];
   const body = rows.map((row) => JSON.stringify(row)).join('\n') + '\n';
-  await fsp.writeFile(absPath, body, 'utf8');
+  const bodyBytes = Buffer.byteLength(body, 'utf8');
+  if (bodyBytes > maxSessionBytes) {
+    throw new Error(
+      `Captured session is ${bodyBytes} bytes, above --max-session-bytes ${maxSessionBytes}. ` +
+        'Rerun with a larger explicit limit if you intentionally want to store this transcript.'
+    );
+  }
+  await fsp.writeFile(absPath, body, { encoding: 'utf8', mode: 0o600 });
   const sha = sha256(body);
   const indexPath = resolveInside(root, path.join(contextDir, 'chat-session-index.jsonl'));
-  await fsp.mkdir(bridgeDir, { recursive: true });
+  await fsp.mkdir(bridgeDir, { recursive: true, mode: 0o700 });
   await fsp.appendFile(indexPath, `${JSON.stringify({
     ts: new Date().toISOString(),
     provider: session.provider,
@@ -488,7 +497,7 @@ async function writeSession(root, contextDir, session) {
     message_count: session.messages.length,
     path: relPath,
     sha256: sha
-  })}\n`, 'utf8');
+  })}\n`, { encoding: 'utf8', mode: 0o600 });
   return { relPath, absPath, indexPath, sha };
 }
 
@@ -530,6 +539,8 @@ async function main() {
   const provider = normalizeProvider(args.provider);
   const title = cleanOneLine(args.title, tab.title || 'Captured ChatGPT session', 180);
   const sessionId = normalizeId(args.sessionId || sessionIdFromUrl(tab.url), `${tab.url}\n${title}`);
+  const captureMethod = args.cdpUrl ? 'chrome-cdp-scroll' : 'chrome-apple-events-scroll';
+  const maxSessionBytes = numberOption(args.maxSessionBytes, 25_000_000, 100_000, 250_000_000);
 
   let captured;
   try {
@@ -544,11 +555,12 @@ async function main() {
     url: tab.url,
     messages: captured.messages,
     capture: {
-      method: 'chrome-apple-events-scroll',
+      method: captureMethod,
       captured_at: new Date().toISOString(),
       max_scrolls: numberOption(args.maxScrolls, 80, 1, 500),
       settle_ms: numberOption(args.settleMs, 900, 50, 10000),
       stable_rounds: numberOption(args.stableRounds, 3, 1, 20),
+      max_session_bytes: maxSessionBytes,
       stats: captured.stats.slice(-80)
     }
   };
@@ -563,12 +575,14 @@ async function main() {
       title,
       source_url: tab.url,
       message_count: session.messages.length,
+      capture_method: captureMethod,
+      max_session_bytes: maxSessionBytes,
       stats_tail: session.capture.stats.slice(-8)
     }, null, 2));
     return;
   }
 
-  const writeResult = await writeSession(root, contextDir, session);
+  const writeResult = await writeSession(root, contextDir, session, { maxSessionBytes });
   console.log(`Saved ChatGPT session: ${writeResult.relPath}`);
   console.log(`Messages: ${session.messages.length}`);
   console.log(`Index: ${path.relative(root, writeResult.indexPath)}`);

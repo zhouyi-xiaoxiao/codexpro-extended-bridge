@@ -28,6 +28,8 @@
   ·
   <a href="FAQ_ZH.md">中文 FAQ</a>
   ·
+  <a href="docs/CLAUDE_APP_USAGE_ZH.md">Claude 使用指南</a>
+  ·
   <a href="SECURITY.md">安全说明</a>
 </p>
 
